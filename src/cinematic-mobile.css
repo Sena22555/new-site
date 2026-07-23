@@ -1,0 +1,9 @@
+@media (max-width: 600px) {
+  .cinematic-hero { min-height: 720px; height: 92svh; }
+  .cinematic-copy { margin-top: 0; }
+  .cinematic-copy h1 { font-size: clamp(49px, 14vw, 76px); }
+  .cinematic-description { font-size: 14px; max-width: 310px; }
+  .cinematic-bottom { display: block; text-align: center; }
+  .cinematic-scroll { display: block; margin-top: 12px; }
+  .editorial-intro { padding-top: 65px; }
+}
