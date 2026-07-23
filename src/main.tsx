@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, ChevronLeft, ChevronRight, MoveUpRight, Quote, Star } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
+import { useInViewAnimation } from './hooks/useInViewAnimation';
 import './styles.css';
 
 const gallery = [
@@ -27,7 +28,8 @@ const caseStudies = [
 ];
 
 function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  return <div className={`reveal ${className}`} style={{ animationDelay: `${delay}s` }}>{children}</div>;
+  const animation = useInViewAnimation();
+  return <div ref={animation.ref} className={`${animation.className} ${className}`} style={{ animationDelay: `${delay}s` }}>{children}</div>;
 }
 function ParallaxImage() {
   const ref = useRef<HTMLDivElement>(null); const frame = useRef(0); const [offset, setOffset] = useState(0); const [active, setActive] = useState(false);
@@ -37,13 +39,16 @@ function ParallaxImage() {
 }
 function Reviews() {
   const [active, setActive] = useState(0);
-  useEffect(() => { const timer = setInterval(() => setActive((x) => (x + 1) % testimonials.length), 3000); return () => clearInterval(timer); }, []);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => { if (paused) return; const timer = setInterval(() => setActive((x) => (x + 1) % testimonials.length), 3000); return () => clearInterval(timer); }, [paused]);
   const move = (direction: number) => setActive((x) => (x + direction + testimonials.length) % testimonials.length);
-  return <section className="reviews"><div className="wide review-head"><h2>What <em>builders</em> say</h2><div className="rating"><span>{[1, 2, 3, 4, 5].map((n) => <Star key={n} size={18} fill="currentColor" />)}</span> Clutch 5/5</div></div><div className="review-window"><div className="review-track" style={{ transform: `translateX(calc(-${active} * (min(427.5px, calc(100vw - 48px)) + 24px)))` }}>{[...testimonials, ...testimonials, ...testimonials].map((item, i) => <article className="review-card" key={`${item[0]}-${i}`}><Quote size={26} strokeWidth={1.2} /><p>“{item[2]}”</p><div className="author"><img src={item[3]} alt="" /><div><strong>{item[0]}</strong><small>↳ {item[1]}</small></div></div></article>)}</div></div><div className="review-controls"><button onClick={() => move(-1)} aria-label="Previous testimonial"><ChevronLeft size={19} /></button><button onClick={() => move(1)} aria-label="Next testimonial"><ChevronRight size={19} /></button></div></section>;
+  return <section className="reviews" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}><div className="wide review-head"><h2>What <em>builders</em> say</h2><div className="rating"><span>{[1, 2, 3, 4, 5].map((n) => <Star key={n} size={18} fill="currentColor" />)}</span> Clutch 5/5</div></div><div className="review-window"><div className="review-track" style={{ transform: `translateX(calc(-${active} * (min(427.5px, calc(100vw - 48px)) + 24px)))` }}>{[...testimonials, ...testimonials, ...testimonials].map((item, i) => <article className="review-card" key={`${item[0]}-${i}`}><Quote size={26} strokeWidth={1.2} /><p>“{item[2]}”</p><div className="author"><img src={item[3]} alt="" /><div><strong>{item[0]}</strong><small>↳ {item[1]}</small></div></div></article>)}</div></div><div className="review-controls"><button onClick={() => move(-1)} aria-label="Previous testimonial"><ChevronLeft size={19} /></button><button onClick={() => move(1)} aria-label="Next testimonial"><ChevronRight size={19} /></button></div></section>;
 }
 function Partner() {
   const [thumbs, setThumbs] = useState<{ id: number; src: string; x: number; y: number; rotate: number }[]>([]);
-  const addThumb = (e: React.MouseEvent<HTMLDivElement>) => { const box = e.currentTarget.getBoundingClientRect(); const id = Date.now(); setThumbs((all) => [...all.slice(-7), { id, src: gallery[Math.floor(Math.random() * gallery.length)], x: e.clientX - box.left, y: e.clientY - box.top, rotate: Math.random() * 20 - 10 }]); setTimeout(() => setThumbs((all) => all.filter((t) => t.id !== id)), 1000); };
+  const lastSpawn = useRef(0); const cleanupFrame = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(cleanupFrame.current), []);
+  const addThumb = (e: React.MouseEvent<HTMLDivElement>) => { const now = performance.now(); if (now - lastSpawn.current < 80) return; lastSpawn.current = now; const box = e.currentTarget.getBoundingClientRect(); const id = Date.now(); setThumbs((all) => [...all.slice(-7), { id, src: gallery[Math.floor(Math.random() * gallery.length)], x: e.clientX - box.left, y: e.clientY - box.top, rotate: Math.random() * 20 - 10 }]); cleanupFrame.current = requestAnimationFrame(() => setTimeout(() => setThumbs((all) => all.filter((t) => t.id !== id)), 1000)); };
   return <section className="partner wide" onMouseMove={addThumb}><div className="partner-inner"><h2>Partner <em>with us</em></h2><a className="button primary partner-button" href="mailto:hello@viktoroddy.com"><img src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=100" alt="" />Start chat with Viktor <ArrowUpRight size={15} /></a>{thumbs.map((t) => <img className="cursor-thumb" key={t.id} src={t.src} alt="" style={{ left: t.x, top: t.y, transform: `translate(-50%, -50%) rotate(${t.rotate}deg)` }} />)}</div></section>;
 }
 function Footer() { return <><footer className="site-footer wide"><a className="button primary" href="mailto:hello@viktoroddy.com">Start a chat <MoveUpRight size={16} /></a><div className="footer-links"><ArrowUpRight size={18} /><div><a href="#work">Services</a><a href="#projects">Work</a><a href="#top">About</a></div><div><a href="https://x.com" target="_blank" rel="noreferrer">x.com</a><a href="https://linkedin.com" target="_blank" rel="noreferrer">LinkedIn</a></div></div></footer><div className="copyright wide"><span>Vortex Studio Limited</span><span>Austin, USA</span></div></>; }
