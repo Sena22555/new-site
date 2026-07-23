@@ -6,4 +6,7 @@
   .cinematic-bottom { display: block; text-align: center; }
   .cinematic-scroll { display: block; margin-top: 12px; }
   .editorial-intro { padding-top: 65px; }
+  .expertise-band, .program-details { display: block; margin-top: 52px; padding: 30px 0; }
+  .expertise-band > p, .program-details > p:not(.eyebrow) { margin-top: 24px; font-size: 16px; }
+  .program-details > p:not(.eyebrow) + p:not(.eyebrow) { margin-top: 18px; }
 }
